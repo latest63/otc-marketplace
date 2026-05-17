@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
+import { getSphere } from '../sphere.js';
 
 export const router = Router();
 
@@ -123,25 +124,35 @@ router.post('/:id/buy', async (req, res, next) => {
     if (!buyer_nametag) return res.status(400).json({ error: 'buyer_nametag required' });
 
     const listing = await pool.query(
-      'SELECT id, title, price_amount, price_coin, status FROM listings WHERE id=$1',
+      'SELECT id, title, price_amount, price_coin, status, escrow_id FROM listings WHERE id=$1',
       [req.params.id]
     );
     if (!listing.rows.length) return res.status(404).json({ error: 'Not found' });
     const l = listing.rows[0];
     if (l.status !== 'active') return res.status(400).json({ error: 'Listing not available' });
 
-    // Defer to Sphere SDK — actual call when wallet is configured
-    // const sphere = await getSphere();
-    // const invoice = await sphere.payments.sendPaymentRequest(buyer_nametag, {
-    //   amount: l.price_amount.toString(), coinId: l.price_coin,
-    //   message: `OTC: ${l.title}`,
-    // });
+    const sphere = getSphere();
+    if (!sphere) {
+      return res.status(503).json({ error: 'Payment system not configured (missing SPHERE_MNEMONIC)' });
+    }
+
+    const invoice = await sphere.payments.sendPaymentRequest(buyer_nametag, {
+      amount: String(l.price_amount),
+      coinId: l.price_coin,
+      message: `OTC Purchase: ${l.title}`,
+    });
+
+    // Store invoice ID on listing for callback matching
+    await pool.query(
+      "UPDATE listings SET escrow_id = $1, updated_at = now() WHERE id = $2",
+      [invoice.id, l.id]
+    );
 
     res.json({
       message: `Payment request sent to ${buyer_nametag}`,
       listing_id: l.id,
       amount: `${l.price_amount} ${l.price_coin}`,
-      // invoice_id: invoice.id,
+      invoice_id: invoice.id,
     });
   } catch (err) { next(err); }
 });

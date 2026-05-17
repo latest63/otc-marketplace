@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
+import { initSphere } from './sphere.js';
 import { errorHandler } from './middleware/error.js';
 import { router as categoriesRouter } from './routes/categories.js';
 import { router as listingsRouter } from './routes/listings.js';
@@ -17,6 +18,15 @@ app.use('/api/listings', listingsRouter);
 
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`OTC Marketplace API on :${config.port}`);
+// Init Sphere wallet, then start listening
+initSphere().then(() => {
+  app.listen(config.port, () => {
+    console.log(`OTC Marketplace API on :${config.port}`);
+  });
+}).catch(err => {
+  console.error('Sphere init failed:', err.message);
+  // Start anyway — payment routes will return 503
+  app.listen(config.port, () => {
+    console.log(`OTC Marketplace API on :${config.port} (payments disabled)`);
+  });
 });

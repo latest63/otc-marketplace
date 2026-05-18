@@ -13,7 +13,7 @@ export default function Admin() {
   const [msg, setMsg] = useState('');
 
   const headers = () => ({ 'Content-Type': 'application/json', 'x-admin-key': key });
-  const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const BASE = import.meta.env.VITE_API_URL || '/api';
 
   const show = (text) => { setMsg(text); setTimeout(() => setMsg(''), 3000); };
 
@@ -74,8 +74,8 @@ export default function Admin() {
   if (!authed) {
     return (
       <div style={{ maxWidth: 400, margin: '4rem auto' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '1rem' }}>
-          Admin <span style={{ color: 'var(--orange)' }}>Access</span>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+          Admin Access
         </h2>
         <div className="form-card">
           <div className="form-group">

@@ -79,7 +79,29 @@ async function initChannels() {
   const gc = sphere.groupChat;
   _channelIds = [];
 
+  // Wait for Nostr connection to stabilize
+  await new Promise(r => setTimeout(r, 3000));
+
+  // Fetch existing groups from relay
+  let available = [];
+  try {
+    available = await gc.fetchAvailableGroups();
+  } catch (e) {
+    console.warn('fetchAvailableGroups failed:', e.message);
+  }
+
   for (const ch of CHANNELS) {
+    // Look for existing group by name
+    const existing = available.find(a =>
+      a.name.toLowerCase() === ch.name.toLowerCase()
+    );
+
+    if (existing) {
+      _channelIds.push({ id: existing.id, ...ch });
+      continue;
+    }
+
+    // Create if not found
     try {
       const group = await gc.createGroup({
         name: ch.name,
@@ -91,22 +113,16 @@ async function initChannels() {
         console.log(`Channel created: ${ch.name} (${group.id})`);
       }
     } catch (e) {
-      // Channel might already exist — try to find it
-      try {
-        const available = await gc.fetchAvailableGroups();
-        const existing = available.find(a => a.name === ch.name);
-        if (existing) {
-          _channelIds.push({ id: existing.id, ...ch });
-        }
-      } catch {}
+      console.warn(`Could not create channel ${ch.name}:`, e.message);
     }
   }
 
-  // Join trade-feed
-  const tf = _channelIds.find(c => c.slug === 'trade-feed');
-  if (tf) {
-    await gc.joinGroup(tf.id).catch(() => {});
+  // Join all channels
+  for (const ch of _channelIds) {
+    await gc.joinGroup(ch.id).catch(() => {});
   }
+
+  console.log(`Chat channels ready: ${_channelIds.length}`);
 }
 
 async function postToTradeFeed(text) {

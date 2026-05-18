@@ -1,0 +1,21 @@
+app = "otc-marketplace-listener"
+primary_region = "ams"
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NETWORK = "testnet"
+  SPHERE_NAMETAG = "@otcmarket"
+
+[[services]]
+  port = 3001
+  protocol = "tcp"
+  internal_port = 3001
+  
+  [[services.concurrency]]
+    type = "requests"
+    hard_limit = 25
+    soft_limit = 20

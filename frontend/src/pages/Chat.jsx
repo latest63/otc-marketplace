@@ -5,7 +5,7 @@ import WalletConnect from '../components/WalletConnect';
 
 export default function Chat() {
   const { sphere, connecting, wallet, channels, currentChannel, currentDM,
-    messages, conversations, dmMessages, unread, createWallet, importWallet,
+    messages, conversations, dmMessages, unread, initError, createWallet, importWallet,
     openChannel, openDM, sendMessage, sendDM, setCurrentDM } = useSphere();
   const [searchParams] = useSearchParams();
 
@@ -37,6 +37,16 @@ export default function Chat() {
   };
 
   if (connecting) return <div className="loading">Connecting wallet...</div>;
+  if (initError) return (
+    <div className="empty" style={{ marginTop: '2rem' }}>
+      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
+      <h3>Connection failed</h3>
+      <div className="meta" style={{ justifyContent: 'center', marginBottom: '1rem', fontSize: '0.8rem' }}>
+        {initError}
+      </div>
+      <button className="btn" onClick={() => window.location.reload()}>Retry</button>
+    </div>
+  );
   if (!wallet?.exists) return <WalletConnect onCreate={createWallet} onImport={importWallet} />;
 
   const channelMsgs = currentChannel ? (messages[currentChannel.id] || []) : [];

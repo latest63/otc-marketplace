@@ -9,6 +9,7 @@ const API = import.meta.env.VITE_API_URL || '/api';
 export function SphereProvider({ children, network = 'testnet' }) {
   const [sphere, setSphere] = useState(null);
   const [connecting, setConnecting] = useState(true);
+  const [initError, setInitError] = useState(null);
   const [wallet, setWallet] = useState(null); // null | { exists, nametag, pubkey }
   const [channels, setChannels] = useState([]);
   const [currentChannel, setCurrentChannel] = useState(null);
@@ -21,6 +22,8 @@ export function SphereProvider({ children, network = 'testnet' }) {
 
   // Init SDK — checks IndexedDB for existing wallet
   const initSphere = useCallback(async () => {
+    setConnecting(true);
+    setInitError(null);
     try {
       const providers = createBrowserProviders({ network, groupChat: true, market: true });
       const exists = await Sphere.exists(providers.storage);
@@ -31,6 +34,7 @@ export function SphereProvider({ children, network = 'testnet' }) {
       }
     } catch (e) {
       console.error('Sphere init:', e);
+      setInitError(e.message || String(e));
     } finally {
       setConnecting(false);
     }
@@ -189,7 +193,7 @@ export function SphereProvider({ children, network = 'testnet' }) {
 
   const value = {
     sphere, connecting, wallet, channels, currentChannel, currentDM,
-    messages, conversations, dmMessages, unread,
+    messages, conversations, dmMessages, unread, initError,
     createWallet, importWallet, openChannel, openDM,
     sendMessage, sendDM, sendPayment, refreshConversations,
     setCurrentDM: (v) => { setCurrentDM(v); setCurrentChannel(null); },

@@ -5,6 +5,7 @@ import { initSphere } from './sphere.js';
 import { errorHandler } from './middleware/error.js';
 import { router as categoriesRouter } from './routes/categories.js';
 import { router as listingsRouter } from './routes/listings.js';
+import { router as adminRouter } from './routes/admin.js';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, nametag: config.spher
 
 app.use('/api/categories', categoriesRouter);
 app.use('/api/listings', listingsRouter);
+app.use('/api/admin', adminRouter);
 
 app.use(errorHandler);
 

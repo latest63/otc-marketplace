@@ -84,13 +84,20 @@ export default function Detail() {
             value={nametag}
             onChange={e => setNametag(e.target.value)}
           />
-          <button
-            className="btn"
-            onClick={handleBuy}
-            disabled={!nametag.trim() || sending}
-          >
-            {sending ? 'Sending...' : 'Send Payment Request'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <button
+              className="btn"
+              onClick={handleBuy}
+              disabled={!nametag.trim() || sending}
+              style={{ flex: 1 }}
+            >
+              {sending ? 'Sending...' : 'Send Payment Request'}
+            </button>
+            <Link to={`/chat?dm=${encodeURIComponent(listing.seller_nametag)}`}
+              className="btn btn-outline">
+              Message Seller
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="msg msg-err" style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>

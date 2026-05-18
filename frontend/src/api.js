@@ -31,10 +31,10 @@ export async function updateListing(id, body) {
   return r.json();
 }
 
-export async function cancelListing(id, seller_pubkey) {
+export async function cancelListing(id, seller_nametag) {
   const r = await fetch(`${BASE}/listings/${id}`, {
     method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ seller_pubkey }),
+    body: JSON.stringify({ seller_nametag }),
   });
   return r.json();
 }

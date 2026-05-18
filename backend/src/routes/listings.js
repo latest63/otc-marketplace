@@ -64,12 +64,27 @@ router.get('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST / — create listing
+// POST / — create listing (auto-resolve pubkey from nametag)
 router.post('/', async (req, res, next) => {
   try {
-    const { seller_nametag, seller_pubkey, title, description, category_slug, price_amount, price_coin } = req.body;
-    if (!seller_nametag || !seller_pubkey || !title || !category_slug || !price_amount) {
+    const { seller_nametag, title, description, category_slug, price_amount, price_coin } = req.body;
+    if (!seller_nametag || !title || !category_slug || !price_amount) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Resolve nametag to get pubkey
+    const sphere = getSphere();
+    let seller_pubkey = '';
+
+    if (sphere) {
+      try {
+        const peer = await sphere.resolve(seller_nametag);
+        if (peer && peer.chainPubkey) {
+          seller_pubkey = peer.chainPubkey;
+        }
+      } catch (resolveErr) {
+        console.warn(`Could not resolve ${seller_nametag}:`, resolveErr.message);
+      }
     }
 
     const { rows } = await pool.query(
@@ -81,16 +96,19 @@ router.post('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// PUT /:id — edit (owner only via seller_pubkey)
+// PUT /:id — edit (owner verified via resolved pubkey)
 router.put('/:id', async (req, res, next) => {
   try {
-    const listing = await pool.query('SELECT seller_pubkey FROM listings WHERE id=$1', [req.params.id]);
+    const { seller_nametag, title, description, category_slug, price_amount, price_coin } = req.body;
+    if (!seller_nametag) return res.status(400).json({ error: 'seller_nametag required' });
+
+    const listing = await pool.query('SELECT seller_nametag FROM listings WHERE id=$1', [req.params.id]);
     if (!listing.rows.length) return res.status(404).json({ error: 'Not found' });
-    if (listing.rows[0].seller_pubkey !== req.body.seller_pubkey) {
+
+    if (listing.rows[0].seller_nametag !== seller_nametag) {
       return res.status(403).json({ error: 'Not your listing' });
     }
 
-    const { title, description, category_slug, price_amount, price_coin } = req.body;
     await pool.query(
       `UPDATE listings SET title=COALESCE($1,title), description=COALESCE($2,description),
        category_slug=COALESCE($3,category_slug), price_amount=COALESCE($4,price_amount),
@@ -101,12 +119,15 @@ router.put('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// DELETE /:id — cancel listing
+// DELETE /:id — cancel listing (owner verified via nametag)
 router.delete('/:id', async (req, res, next) => {
   try {
-    const listing = await pool.query('SELECT seller_pubkey, status FROM listings WHERE id=$1', [req.params.id]);
+    const { seller_nametag } = req.body;
+    if (!seller_nametag) return res.status(400).json({ error: 'seller_nametag required' });
+
+    const listing = await pool.query('SELECT seller_nametag, status FROM listings WHERE id=$1', [req.params.id]);
     if (!listing.rows.length) return res.status(404).json({ error: 'Not found' });
-    if (listing.rows[0].seller_pubkey !== req.body.seller_pubkey) {
+    if (listing.rows[0].seller_nametag !== seller_nametag) {
       return res.status(403).json({ error: 'Not your listing' });
     }
     if (listing.rows[0].status !== 'active') {
@@ -124,7 +145,7 @@ router.post('/:id/buy', async (req, res, next) => {
     if (!buyer_nametag) return res.status(400).json({ error: 'buyer_nametag required' });
 
     const listing = await pool.query(
-      'SELECT id, title, price_amount, price_coin, status, escrow_id FROM listings WHERE id=$1',
+      'SELECT id, title, price_amount, price_coin, status FROM listings WHERE id=$1',
       [req.params.id]
     );
     if (!listing.rows.length) return res.status(404).json({ error: 'Not found' });
@@ -142,7 +163,6 @@ router.post('/:id/buy', async (req, res, next) => {
       message: `OTC Purchase: ${l.title}`,
     });
 
-    // Check if payment request was actually sent
     if (invoice.success === false) {
       return res.status(400).json({
         error: invoice.error || 'Failed to send payment request',
@@ -152,7 +172,6 @@ router.post('/:id/buy', async (req, res, next) => {
 
     const invoiceId = invoice.id || invoice.requestId || 'unknown';
 
-    // Store invoice ID on listing for callback matching
     await pool.query(
       "UPDATE listings SET escrow_id = $1, updated_at = now() WHERE id = $2",
       [invoiceId, l.id]

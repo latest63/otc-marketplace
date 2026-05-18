@@ -6,7 +6,7 @@ export default function Create() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({
-    seller_nametag: '', seller_pubkey: '', title: '', description: '',
+    seller_nametag: '', title: '', description: '',
     category_slug: '', price_amount: '', price_coin: 'UCT',
   });
   const [err, setErr] = useState('');
@@ -52,19 +52,15 @@ export default function Create() {
             name="seller_nametag" value={form.seller_nametag}
             onChange={handleChange} required placeholder="@you"
           />
-        </div>
-        <div className="form-group">
-          <label>Your Sphere Public Key</label>
-          <input
-            name="seller_pubkey" value={form.seller_pubkey}
-            onChange={handleChange} required placeholder="0x..."
-          />
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 4 }}>
+            Pubkey auto-resolved from the network
+          </div>
         </div>
         <div className="form-group">
           <label>Title</label>
           <input
             name="title" value={form.title}
-            onChange={handleChange} required
+            onChange={handleChange} required placeholder="What are you selling?"
           />
         </div>
         <div className="form-group">

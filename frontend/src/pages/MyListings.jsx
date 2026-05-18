@@ -4,7 +4,6 @@ import { getListings, cancelListing } from '../api';
 
 export default function MyListings() {
   const [nametag, setNametag] = useState(localStorage.getItem('my_nametag') || '');
-  const [pubkey, setPubkey] = useState(localStorage.getItem('my_pubkey') || '');
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -16,14 +15,13 @@ export default function MyListings() {
     setListings(Array.isArray(res) ? res : []);
     setLoading(false);
     localStorage.setItem('my_nametag', nametag);
-    localStorage.setItem('my_pubkey', pubkey);
   };
 
   useEffect(() => { if (nametag) fetchMine(); }, []);
 
   const handleCancel = async (id) => {
     if (!window.confirm('Cancel this listing?')) return;
-    await cancelListing(id, pubkey);
+    await cancelListing(id, nametag);
     fetchMine();
     setMsg('Listing cancelled');
     setTimeout(() => setMsg(''), 3000);
@@ -43,14 +41,10 @@ export default function MyListings() {
 
       <div className="my-input-group">
         <input
-          placeholder="Your nametag"
+          placeholder="Your Sphere nametag"
           value={nametag}
           onChange={e => setNametag(e.target.value)}
-        />
-        <input
-          placeholder="Your pubkey"
-          value={pubkey}
-          onChange={e => setPubkey(e.target.value)}
+          style={{ flex: 1 }}
         />
         <button className="btn btn-sm" onClick={fetchMine}>Load</button>
       </div>

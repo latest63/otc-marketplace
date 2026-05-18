@@ -142,17 +142,27 @@ router.post('/:id/buy', async (req, res, next) => {
       message: `OTC Purchase: ${l.title}`,
     });
 
+    // Check if payment request was actually sent
+    if (invoice.success === false) {
+      return res.status(400).json({
+        error: invoice.error || 'Failed to send payment request',
+        detail: `Make sure "${buyer_nametag}" has published their Sphere identity on testnet`,
+      });
+    }
+
+    const invoiceId = invoice.id || invoice.requestId || 'unknown';
+
     // Store invoice ID on listing for callback matching
     await pool.query(
       "UPDATE listings SET escrow_id = $1, updated_at = now() WHERE id = $2",
-      [invoice.id, l.id]
+      [invoiceId, l.id]
     );
 
     res.json({
       message: `Payment request sent to ${buyer_nametag}`,
       listing_id: l.id,
       amount: `${l.price_amount} ${l.price_coin}`,
-      invoice_id: invoice.id,
+      invoice_id: invoiceId,
     });
   } catch (err) { next(err); }
 });

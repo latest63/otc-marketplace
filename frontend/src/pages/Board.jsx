@@ -22,23 +22,38 @@ export default function Board() {
   return (
     <div>
       <div className="board-header">
-        <h2>All Listings</h2>
+        <h2>Market<span>board</span></h2>
         <div className="filters">
-          <input type="text" placeholder="Search..." value={filters.q}
-            onChange={e => setFilters(f => ({ ...f, q: e.target.value }))} />
-          <select value={filters.category}
-            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}>
-            <option value="">All</option>
-            {categories.map(c => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+          <input
+            type="text"
+            placeholder="Search listings..."
+            value={filters.q}
+            onChange={e => setFilters(f => ({ ...f, q: e.target.value }))}
+          />
+          <select
+            value={filters.category}
+            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+          >
+            <option value="">All Categories</option>
+            {categories.map(c => (
+              <option key={c.slug} value={c.slug}>{c.label}</option>
+            ))}
           </select>
         </div>
       </div>
 
-      {loading ? <div className="loading">Loading...</div> :
-       listings.length === 0 ? <div className="empty">No listings yet</div> :
-       <div className="grid">
-         {listings.map(l => <ListingCard key={l.id} listing={l} />)}
-       </div>}
+      {loading ? (
+        <div className="loading">Loading</div>
+      ) : listings.length === 0 ? (
+        <div className="empty">
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✦</div>
+          No listings yet — be the first to sell
+        </div>
+      ) : (
+        <div className="grid">
+          {listings.map(l => <ListingCard key={l.id} listing={l} />)}
+        </div>
+      )}
     </div>
   );
 }

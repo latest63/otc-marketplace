@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, NavLink } from 'react-router-dom';
 import Board from './pages/Board';
 import Detail from './pages/Detail';
 import Create from './pages/Create';
@@ -9,11 +9,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <header className="header">
-        <Link to="/" className="logo">🔄 OTC Market</Link>
+        <Link to="/" className="logo">
+          OTC<span>Marketplace</span>
+        </Link>
         <nav>
-          <Link to="/">Board</Link>
-          <Link to="/create">Sell</Link>
-          <Link to="/my">My Listings</Link>
+          <NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''} end>Board</NavLink>
+          <NavLink to="/create" className={({ isActive }) => isActive ? 'active' : ''}>Sell</NavLink>
+          <NavLink to="/my" className={({ isActive }) => isActive ? 'active' : ''}>My Listings</NavLink>
         </nav>
       </header>
       <main className="container">
